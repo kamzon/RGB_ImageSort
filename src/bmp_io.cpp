@@ -162,5 +162,128 @@ namespace detail {
 
 } // namespace detail
 
+    RgbImage loadRgbImage(const std::string& file_name) {
+        using namespace detail;
+
+        std::ifstream input_file(file_name, std::ios::binary);
+
+        if (!input_file.is_open())
+            throw ErrorReadingFile();
+
+        try {
+            BmpFileHeader header{readBmpFileHeader(input_file)};
+            BmpInfoHeader info{readBmpInfoHeader(input_file)};
+
+            uint32_t row_size = info.kBytesPerPixel * info.width;
+            uint32_t row_size_padded = ((row_size + 3) / 4) * 4;
+            uint32_t padding = row_size_padded - row_size;
+
+            input_file.seekg(header.data_offset);
+
+            RgbImage image(info.width, info.height);
+            RgbImage::RgbData& img_data = image.getData();
+
+            for (int row = 0; row < info.height; ++row) {
+            int row_start = row * info.kBytesPerPixel * info.width;
+            char* dest_ptr = reinterpret_cast<char*>(&img_data[row_start]);
+            input_file.read(dest_ptr, row_size);
+            input_file.seekg(padding, std::ios_base::cur);
+            }
+
+            if (input_file.bad())
+            throw ErrorReadingFile();
+
+            input_file.close();
+
+            return image;
+
+        } catch (const std::exception&) {
+            input_file.close();
+            throw;
+        }
+    }
+
+    void saveRgbImage(const std::string& file_name, const RgbImage& image) {
+        using namespace detail;
+
+        std::ofstream out_file(file_name, std::ios::binary | std::ofstream::trunc);
+
+        if (!out_file.is_open())
+            throw ErrorWritingFile();
+
+        if (!out_file.good()) {
+            out_file.close();
+            throw ErrorWritingFile();
+        }
+
+        BmpFileHeader header;
+
+        header.data_offset =
+            BmpFileHeader::kFileHeaderSize + BmpInfoHeader::kInfoHeaderSize;
+
+        BmpInfoHeader info;
+
+        info.width = image.getWidth();
+        info.height = image.getHeight();
+
+        uint32_t row_size = info.kBytesPerPixel * info.width;
+        uint32_t row_size_padded = ((row_size + 3) / 4) * 4;
+        uint32_t padding = row_size_padded - row_size;
+
+        const RgbImage::RgbData& img_data = image.getData();
+
+        uint32_t padding_val = 0;
+        const char* padd_ptr = reinterpret_cast<const char*>(&padding_val);
+
+        writeFileHeader(out_file, header);
+        writeInfoHeader(out_file, info);
+
+        for (int row = 0; row < info.height; ++row) {
+            int row_start = row * info.kBytesPerPixel * info.width;
+            const char* src_ptr = reinterpret_cast<const char*>(&img_data[row_start]);
+            out_file.write(src_ptr, row_size);
+            out_file.write(padd_ptr, padding);
+        }
+
+        if (!out_file.good()) {
+            out_file.close();
+            throw ErrorWritingFile();
+        }
+
+        out_file.close();
+    }
+
+    void Swap (uint8_t *a,uint8_t *b)
+    {
+        uint8_t temp = *a;
+        *a = *b;
+        *b = temp;
+    }
+
+    int Ind (int i,int j, int w)
+    {
+        return 3*(i*w + j);
+    }
+
+    RgbImage sortRgbImage(RgbImage& image) {
+
+        u_int32_t hieght = image.getHeight();
+        u_int32_t width = image.getWidth();
+        
+        for(int j=0;j<width;j+=1){
+            for (int k = 0; k < hieght; k++){
+            for(int l=0;l<hieght;l+=1){
+                if((image.getData()[Ind(k,j,width)]+image.getData()[Ind(k,j,width)+1]+image.getData()[Ind(k,j,width)+2])/3>(image.getData()[Ind(l,j,width)]+image.getData()[Ind(l,j,width)+1]+image.getData()[Ind(l,j,width)+2])/3){
+                Swap(&image.getData()[Ind(k,j,width)],&image.getData()[Ind(l,j,width)]);
+                Swap(&image.getData()[Ind(k,j,width)+1],&image.getData()[Ind(l,j,width)+1]);
+                Swap(&image.getData()[Ind(k,j,width)+2],&image.getData()[Ind(l,j,width)+2]);      
+                }
+            }
+            }
+    }
+
+  return image;
+  
+}
 
 }
