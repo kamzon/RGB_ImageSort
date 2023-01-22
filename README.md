@@ -1,7 +1,7 @@
 # RGB_ImageSort
 
 ### Goals:
-- The primary goals of this project are to learn the C++ programming language and become familiar with CMake, Git, and testing units ... 
+- The primary goal of this project are to learn the C++ programming language and become familiar with CMake, Git, and testing units ... 
 
 
 ## Description:
