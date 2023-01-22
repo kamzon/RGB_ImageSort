@@ -27,5 +27,5 @@ cd RGB_ImageSort
 mkdir build
 cd build
 cmake ../
-make
+make 
 ```
